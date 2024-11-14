@@ -35,15 +35,6 @@
 // On a Wemos D1 this is pin D4 aka TX1.
 #define ENABLE_UART
 
-// Uncomment to send DMX data via I2S instead of UART.
-// I2S allows for better control of number of stop bits and DMX timing to meet the
-// requirements of sloppy devices. Moreover using DMA reduces strain of the CPU and avoids
-// issues with background activity such as handling WiFi, interrupts etc.
-// However - because of the extra timing/pauses for sloppy device, sending DMX over I2S
-// will cause throughput to drop from approx 40 packets/s to around 30.
-// On a Wemos D1 I2S is available on pin RX0.
-#define ENABLE_I2S
-
 // Enable kind of unit test for new I2S code moving around a knowingly picky device
 // (china brand moving head with timing issues)
 //#define WITH_TEST_CODE
@@ -87,47 +78,6 @@
 
 /*********************************************************************************/
 
-#ifdef ENABLE_I2S
-#include <I2S.h>
-#include <i2s_reg.h>
-#define I2S_PIN 3
-#define DMX_CHANNELS 512
-
-// See comments below
-//#define I2S_SUPER_SAFE
-
-#ifdef I2S_SUPER_SAFE
-// Below timings are based on measures taken with a commercial DMX512 controller.
-// They differ substentially from the offcial DMX standard ... breaks are longer, more
-// stop bits. Apparently to please some picky devices out there that cannot handle
-// DMX data quickly enough.
-// Using these parameters results in a throughput of approx. 29.7 packets/s (with 512 DMX channels)
-typedef struct {
-  uint16_t mark_before_break[10]; // 10 * 16 bits * 4 us -> 640 us
-  uint16_t space_for_break[2]; // 2 * 16 bits * 4 us -> 128 us
-  uint16_t mark_after_break; // 13 MSB low bits * 4 us adds 52 us to space_for_break -> 180 us
-  // each "byte" (actually a word) consists of:
-  // 8 bits payload + 7 stop bits (high) + 1 start (low) for the next byte
-  uint16_t dmx_bytes[DMX_CHANNELS + 1];
-} i2s_packet;
-
-#else
-// This configuration sets way shorter MBB and SFB but still adds lots of extra stop bits.
-// At least for my devices this still works and increases thrughput slightly to 30.3  packets/s.
-typedef struct {
-  uint16_t mark_before_break[1]; // 1 * 16 bits * 4 us -> 64 us
-  uint16_t space_for_break[1]; // 1 * 16 bits * 4 us -> 64 us
-  uint16_t mark_after_break; // 13 MSB low bits * 4 us adds 52 us to space_for_break -> 116 us
-  // each "byte" (actually a word) consists of:
-  // 8 bits payload + 7 stop bits (high) + 1 start (low) for the next byte
-  uint16_t dmx_bytes[DMX_CHANNELS + 1];
-} i2s_packet;
-#endif // I2S_SUPER_SAFE
-
-#endif // ENABLE_I2S
-
-/*********************************************************************************/
-
 const char* host = "ARTNET";
 const char* version = __DATE__ " / " __TIME__;
 
@@ -149,10 +99,7 @@ struct  {
 #ifdef ENABLE_UART
   uint8_t uart_data[512];
 #endif
-#ifdef ENABLE_I2S
-  i2s_packet i2s_data;
-  uint16_t i2s_length;
-#endif
+
 } global;
 
 #ifdef ENABLE_ARDUINO_OTA
@@ -165,11 +112,6 @@ unsigned int last_ota_progress = 0;
 #ifdef ENABLE_UART
 long tic_uart = 0;
 unsigned long uartCounter;
-#endif
-
-#ifdef ENABLE_I2S
-long tic_i2s = 0;
-unsigned long i2sCounter;
 #endif
 
 /*********************************************************************************/
@@ -204,31 +146,6 @@ void onDmxPacket(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *
     // copy the data from the UDP packet
     global.universe = universe;
     global.sequence = sequence;
-
-#ifdef ENABLE_I2S
-    // TODO optimize i2s such that it can send less than 512 bytes if not required (length<512)
-    // we are sending I2S _frames_ (not bytes) and every frame consists of 2 words,
-    // so we must ensure an even number of DMX values where every walue is a word
-
-    /* do not activate before thoroughly tested with arbitrary DMX sizes
-       int even_length = 2 * (length + 1) / 2;
-       if (even_length > DMX_CHANNELS) {
-       even_length = DMX_CHANNELS;
-       }
-       int skipped_bytes = 2 * (DMX_CHANNELS - even_length); // divisible by 4
-       global.i2s_length = sizeof(global.i2s_data) - skipped_bytes;
-       Serial.printf("length=%d, even_length=%d, skipped_bytes=%d, i2s_length=%d, sizeof(i2s_data)=%d\n",
-                  length, even_length, skipped_bytes, global.i2s_length, sizeof(global.i2s_data));
-    */
-
-    for (int i = 0; i < DMX_CHANNELS; i++) {
-      uint16_t hi = i < length ? flipByte(data[i]) : 0;
-      // Add stop bits and start bit of next byte unless there is no next byte.
-      uint16_t lo = i == DMX_CHANNELS - 1 ? 0b0000000011111111 : 0b0000000011111110;
-      // leave the start-byte (index 0) untouched => +1:
-      global.i2s_data.dmx_bytes[i + 1] = (hi << 8) | lo;
-    }
-#endif
 
 #ifdef ENABLE_UART
     if (length <= 512)
@@ -266,41 +183,6 @@ void setup() {
 #ifdef ENABLE_UART
   for (int i = 0; i < 512; i++)
     global.uart_data[i] = 0;
-#endif
-
-#ifdef ENABLE_I2S
-#ifdef I2S_SUPER_SAFE
-  Serial.println("Using super safe I2S timing");
-#else
-  Serial.println("Using normal I2S timing");
-#endif
-  // This must NOT be called before Serial.begin I2S output is on RX0 pin
-  // which would be reset to input mode for serial data rather than output for I2S data.
-
-  pinMode(I2S_PIN, OUTPUT); // Override default Serial initiation
-  digitalWrite(I2S_PIN, 1); // Set pin high
-
-  memset(&(global.i2s_data), 0x00, sizeof(global.i2s_data));
-  memset(&(global.i2s_data.mark_before_break), 0xff, sizeof(global.i2s_data.mark_before_break));
-
-  // 3 bits (12us) MAB. The MAB's LSB 0 acts as the start bit (low) for the null byte
-  global.i2s_data.mark_after_break = (uint16_t) 0b000001110;
-
-  // Set LSB to 0 for every byte to act as the start bit of the following byte.
-  // Sending 7 stop bits in stead of 2 will please slow/buggy hardware and act
-  // as the mark time between slots.
-  for (int i = 0; i < DMX_CHANNELS; i++) {
-    global.i2s_data.dmx_bytes[i] = (uint16_t) 0b0000000011111110;
-  }
-  // Set MSB NOT to 0 for the last byte because MBB (mark for break will follow)
-  global.i2s_data.dmx_bytes[DMX_CHANNELS] = (uint16_t) 0b0000000011111111;
-
-  i2s_begin();
-  // 250.000 baud / 32 bits = 7812
-  i2s_set_rate(7812);
-
-  // Use this to fine tune frequency: should be 125 kHz
-  //memset(&data, 0b01010101, sizeof(data));
 #endif
 
   // The SPIFFS file system contains the html and javascript code for the web interface
@@ -490,9 +372,6 @@ void setup() {
   tic_uart    = 0;
 #endif
 
-#ifdef ENABLE_I2S
-  tic_i2s    = 0;
-#endif
 
   Serial.println("Setup done");
 } // setup
@@ -574,21 +453,6 @@ void loop() {
       }
 #endif
 
-#ifdef ENABLE_I2S
-      // From the comment in I2S.h:
-      // "A frame is just a int16_t for mono, for stereo a frame is two int16_t, one for each channel."
-      // Therefore we need to divide by 4 in total
-      i2s_write_buffer((int16_t*) &global.i2s_data, sizeof(global.i2s_data) / 4);
-
-      i2sCounter++;
-      if ((now - tic_i2s) > 1000 && i2sCounter > 100) {
-        // don't estimate the FPS too frequently
-        float pps = (1000.0 * i2sCounter) / (now - tic_i2s);
-        tic_i2s = now;
-        i2sCounter = 0;
-        Serial.printf("I2S: %.1f p/s\n", pps);
-      }
-#endif
     }
   }
 
@@ -597,17 +461,6 @@ void loop() {
 #endif
 
 } // loop
-
-/*********************************************************************************/
-
-#ifdef ENABLE_I2S
-// Reverse byte order because DMX expects LSB first but I2S sends MSB first.
-byte flipByte(byte c) {
-  c = ((c >> 1) & 0b01010101) | ((c << 1) & 0b10101010);
-  c = ((c >> 2) & 0b00110011) | ((c << 2) & 0b11001100);
-  return (c >> 4) | (c << 4);
-}
-#endif // ENABLE_I2S
 
 /*********************************************************************************/
 
@@ -630,16 +483,5 @@ void testCode() {
   global.uart_data[7] =   0;// strobe
   global.uart_data[8] = 150; // brightness
 #endif // ENABLE_UART
-
-#ifdef ENABLE_I2S
-  global.i2s_data.dmx_bytes[1] = (flipByte(  x) << 8) | 0b0000000011111110;// x 0 - 170
-  global.i2s_data.dmx_bytes[2] = (flipByte(  0) << 8) | 0b0000000011111110;// x fine
-  global.i2s_data.dmx_bytes[3] = (flipByte(  x) << 8) | 0b0000000011111110;// y: 0: -horz. 120: vert, 240: +horz
-  global.i2s_data.dmx_bytes[4] = (flipByte(  0) << 8) | 0b0000000011111110;// y fine
-  global.i2s_data.dmx_bytes[5] = (flipByte( 30) << 8) | 0b0000000011111110; // color wheel: red
-  global.i2s_data.dmx_bytes[6] = (flipByte(  0) << 8) | 0b0000000011111110;// pattern
-  global.i2s_data.dmx_bytes[7] = (flipByte(  0) << 8) | 0b0000000011111110;// strobe
-  global.i2s_data.dmx_bytes[8] = (flipByte(150) << 8) | 0b0000000011111110; // brightness
-#endif // ENABLE_I2S
 }
 #endif // WITH_TEST_CODE
