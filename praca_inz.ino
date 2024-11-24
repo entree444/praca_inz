@@ -28,8 +28,8 @@
 #define MAX(x,y) (x>y ? x : y)
 
   // Piny dla diody LED i przekaźnika
-  const int ledPin = D1;    // GPIO5 (D1 na NodeMCU)
-  const int relayPin = D2;  // GPIO4 (D2 na NodeMCU)
+  const int ledPin = D3;    // GPIO5 (D1 na NodeMCU)
+  const int relayPin = D5;  // GPIO4 (D2 na NodeMCU)
   
   // Zmienne stanu diody LED i przekaźnika
   bool ledState = false;    // Stan diody LED
@@ -389,9 +389,7 @@ void setup() {
     digitalWrite(ledPin, LOW); // Wyłącz diodę na starcie
     digitalWrite(relayPin, LOW); // Wyłącz przekaźnik na starcie
 
-        // Endpoint do głównej strony WWW
-    server.on("/", handleRoot);
-  
+
     // Endpoint do sterowania diodą LED
     server.on("/toggle_led", []() {
       ledState = !ledState; // Zmień stan diody
