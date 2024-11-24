@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+  <html>
+  <head>
+    <title>Pilot</title>
+    <style>
+      body { font-family: Arial, sans-serif; text-align: center; margin: 50px; }
+      button { font-size: 20px; padding: 10px 20px; margin: 10px; cursor: pointer; }
+      .led { background-color: #4CAF50; color: white; }
+      .relay { background-color: #008CBA; color: white; }
+      .status { font-size: 18px; margin-top: 20px; }
+    </style>
+  </head>
+  <body>
+    <h1>ESP8266 Control Panel</h1>
+    <p><button class="led" onclick="toggleLed()">Toggle LED</button></p>
+    <p><button class="relay" onclick="toggleRelay()">Toggle Relay</button></p>
+    <div class="status">
+      <p>LED: <span id="ledStatus">OFF</span></p>
+      <p>Relay: <span id="relayStatus">OFF</span></p>
+    </div>
+    <script>
+      // Funkcja do przełączania LED
+      function toggleLed() {
+        fetch('/toggle_led')
+          .then(() => updateStatus());
+      }
+      // Funkcja do przełączania przekaźnika
+      function toggleRelay() {
+        fetch('/toggle_relay')
+          .then(() => updateStatus());
+      }
+      // Funkcja do aktualizacji statusu
+      function updateStatus() {
+        fetch('/status')
+          .then(response => response.json())
+          .then(data => {
+            document.getElementById('ledStatus').textContent = data.led;
+            document.getElementById('relayStatus').textContent = data.relay;
+          });
+      }
+      // Pierwsza aktualizacja statusu po załadowaniu strony
+      updateStatus();
+    </script>
+  </body>
+  </html>
