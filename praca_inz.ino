@@ -32,12 +32,12 @@
   const int ledPin = D3;    // GPIO5 (D1 na NodeMCU)
   const int relayPin = D5;  // GPIO4 (D2 na NodeMCU)
   const int dimmerPin = D6;
-  const int zcPin = D7;     // GPIO2 (D na NodeMCU) - Zero-cross detection pin
+  const int zcPin = D8;     // GPIO2 (D na NodeMCU) - Zero-cross detection pin
   
   // Zmienne stanu diody LED i przekaźnika
   bool ledState = false;    // Stan diody LED
   bool relayState = false;  // Stan przekaźnika
-  int dimmerValue = 0;      // Poziom jasności Dimmer (0-100%)
+ int dimmerValue = 0;      // Poziom jasności Dimmer (0-100%)
 
   // Obiekt dla AC Dimmer
 dimmerLamp dimmer(dimmerPin, zcPin); // Konstruktor z pinami: sterowanie, ZC
@@ -396,8 +396,8 @@ void setup() {
     digitalWrite(ledPin, LOW); // Wyłącz diodę na starcie
     digitalWrite(relayPin, LOW); // Wyłącz przekaźnik na starcie
 
-    dimmer.begin(NORMAL_MODE, ON); // NORMAL_MODE (pełna faza), stan początkowy włączony
-    dimmer.setPower(0);   
+/*    dimmer.begin(NORMAL_MODE, ON); // NORMAL_MODE (pełna faza), stan początkowy włączony
+    dimmer.setPower(0);   */
 
 
     // Endpoint do sterowania diodą LED
@@ -418,7 +418,7 @@ void setup() {
   
 
   // Endpoint do ustawienia jasności dimmera
-  server.on("/set_dimmer", []() {
+ server.on("/set_dimmer", []() {
     if (server.hasArg("value")) {
       dimmerValue = server.arg("value").toInt();
       dimmer.setPower(dimmerValue); // Ustaw nową jasność
@@ -432,7 +432,7 @@ void setup() {
   // Endpoint do pobierania aktualnego stanu urządzeń
   server.on("/status", []() {
     String status = "{\"led\":\"" + String(ledState ? "ON" : "OFF") +
-                    "\",\"relay\":\"" + String(relayState ? "ON" : "OFF") +
+                    "\",\"relay\":\"" + String(relayState ? "ON" : "OFF")+ 
                     "\",\"dimmer\":" + String(dimmerValue) + "}";
     server.send(200, "application/json", status);
   });
