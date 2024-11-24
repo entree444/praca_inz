@@ -30,10 +30,14 @@
   // Piny dla diody LED i przekaźnika
   const int ledPin = D3;    // GPIO5 (D1 na NodeMCU)
   const int relayPin = D5;  // GPIO4 (D2 na NodeMCU)
+  const int dimmerPin = D3
   
   // Zmienne stanu diody LED i przekaźnika
   bool ledState = false;    // Stan diody LED
   bool relayState = false;  // Stan przekaźnika
+  int dimmerValue = 0;      // Poziom jasności Dimmer (0-100%)
+
+  dimmerLamp dimmer(dimmerPin);
 
 /*********************************************************************************/
 
@@ -86,7 +90,7 @@
 
 /*********************************************************************************/
 
-const char* host = "ARTNET";
+const char* host = "ART-NET";
 const char* version = __DATE__ " / " __TIME__;
 
 Config config;
@@ -389,6 +393,9 @@ void setup() {
     digitalWrite(ledPin, LOW); // Wyłącz diodę na starcie
     digitalWrite(relayPin, LOW); // Wyłącz przekaźnik na starcie
 
+    dimmer.begin(NORMAL_MODE, ON); // NORMAL_MODE (pełna faza), stan początkowy włączony
+    dimmer.setPower(0);   
+
 
     // Endpoint do sterowania diodą LED
     server.on("/toggle_led", []() {
@@ -406,13 +413,24 @@ void setup() {
       Serial.println(relayState ? "Relay ON" : "Relay OFF");
     });
   
-    // Endpoint do pobierania aktualnego stanu urządzeń
-    server.on("/status", []() {
-      String status = "{\"led\":\"" + String(ledState ? "ON" : "OFF") +
-                      "\",\"relay\":\"" + String(relayState ? "ON" : "OFF") + "\"}";
-      server.send(200, "application/json", status);
-    });
+  server.on("/set_dimmer", []() {
+    if (server.hasArg("value")) {
+      dimmerValue = server.arg("value").toInt();
+      dimmer.setPower(dimmerValue); // Ustaw nową jasność
+      server.send(200, "text/plain", "Dimmer set to " + String(dimmerValue) + "%");
+      Serial.println("Dimmer set to " + String(dimmerValue) + "%");
+    } else {
+      server.send(400, "text/plain", "Missing 'value' parameter");
+    }
+  });
 
+  // Endpoint do pobierania aktualnego stanu urządzeń
+  server.on("/status", []() {
+    String status = "{\"led\":\"" + String(ledState ? "ON" : "OFF") +
+                    "\",\"relay\":\"" + String(relayState ? "ON" : "OFF") +
+                    "\",\"dimmer\":" + String(dimmerValue) + "}";
+    server.send(200, "application/json", status);
+  });
 
 } // setup
 
