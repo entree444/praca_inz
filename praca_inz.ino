@@ -27,6 +27,14 @@
 #define MIN(x,y) (x<y ? x : y)
 #define MAX(x,y) (x>y ? x : y)
 
+  // Piny dla diody LED i przekaźnika
+  const int ledPin = D1;    // GPIO5 (D1 na NodeMCU)
+  const int relayPin = D2;  // GPIO4 (D2 na NodeMCU)
+  
+  // Zmienne stanu diody LED i przekaźnika
+  bool ledState = false;    // Stan diody LED
+  bool relayState = false;  // Stan przekaźnika
+
 /*********************************************************************************/
 
 // Uncomment to send DMX data using the microcontroller's builtin UART.
@@ -374,6 +382,40 @@ void setup() {
 
 
   Serial.println("Setup done");
+    /*********************************/
+    pinMode(ledPin, OUTPUT);
+    pinMode(relayPin, OUTPUT);
+  
+    digitalWrite(ledPin, LOW); // Wyłącz diodę na starcie
+    digitalWrite(relayPin, LOW); // Wyłącz przekaźnik na starcie
+
+        // Endpoint do głównej strony WWW
+    server.on("/", handleRoot);
+  
+    // Endpoint do sterowania diodą LED
+    server.on("/toggle_led", []() {
+      ledState = !ledState; // Zmień stan diody
+      digitalWrite(ledPin, ledState ? HIGH : LOW);
+      server.send(200, "text/plain", ledState ? "ON" : "OFF");
+      Serial.println(ledState ? "LED ON" : "LED OFF");
+    });
+  
+    // Endpoint do sterowania przekaźnikiem
+    server.on("/toggle_relay", []() {
+      relayState = !relayState; // Zmień stan przekaźnika
+      digitalWrite(relayPin, relayState ? HIGH : LOW);
+      server.send(200, "text/plain", relayState ? "ON" : "OFF");
+      Serial.println(relayState ? "Relay ON" : "Relay OFF");
+    });
+  
+    // Endpoint do pobierania aktualnego stanu urządzeń
+    server.on("/status", []() {
+      String status = "{\"led\":\"" + String(ledState ? "ON" : "OFF") +
+                      "\",\"relay\":\"" + String(relayState ? "ON" : "OFF") + "\"}";
+      server.send(200, "application/json", status);
+    });
+
+
 } // setup
 
 /*********************************************************************************/
