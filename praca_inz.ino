@@ -23,6 +23,7 @@
 
 #include "rgb_led.h"
 #include "webinterface.h"
+#include <RBDdimmer.h>
 
 #define MIN(x,y) (x<y ? x : y)
 #define MAX(x,y) (x>y ? x : y)
@@ -30,7 +31,7 @@
   // Piny dla diody LED i przekaźnika
   const int ledPin = D3;    // GPIO5 (D1 na NodeMCU)
   const int relayPin = D5;  // GPIO4 (D2 na NodeMCU)
-  const int dimmerPin = D3
+  const int dimmerPin = D6;
   
   // Zmienne stanu diody LED i przekaźnika
   bool ledState = false;    // Stan diody LED
