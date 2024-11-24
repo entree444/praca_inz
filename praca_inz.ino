@@ -414,6 +414,8 @@ void setup() {
       Serial.println(relayState ? "Relay ON" : "Relay OFF");
     });
   
+
+  // Endpoint do ustawienia jasności dimmera
   server.on("/set_dimmer", []() {
     if (server.hasArg("value")) {
       dimmerValue = server.arg("value").toInt();
@@ -432,6 +434,7 @@ void setup() {
                     "\",\"dimmer\":" + String(dimmerValue) + "}";
     server.send(200, "application/json", status);
   });
+
 
 } // setup
 
