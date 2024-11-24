@@ -32,13 +32,15 @@
   const int ledPin = D3;    // GPIO5 (D1 na NodeMCU)
   const int relayPin = D5;  // GPIO4 (D2 na NodeMCU)
   const int dimmerPin = D6;
+  const int zcPin = D7;     // GPIO2 (D na NodeMCU) - Zero-cross detection pin
   
   // Zmienne stanu diody LED i przekaźnika
   bool ledState = false;    // Stan diody LED
   bool relayState = false;  // Stan przekaźnika
   int dimmerValue = 0;      // Poziom jasności Dimmer (0-100%)
 
-  dimmerLamp dimmer(dimmerPin);
+  // Obiekt dla AC Dimmer
+dimmerLamp dimmer(dimmerPin, zcPin); // Konstruktor z pinami: sterowanie, ZC
 
 /*********************************************************************************/
 
