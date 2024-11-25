@@ -9,16 +9,25 @@
     .relay { background-color: #008CBA; color: white; }
     .status { font-size: 18px; margin-top: 20px; }
     input[type=range] { width: 300px; margin: 20px; }
+    .slider-container { margin-top: 20px; }
   </style>
 </head>
 <body>
   <h1>ESP8266 Control Panel</h1>
-  <p><button class="led" onclick="toggleLed()">Toggle LED</button></p>
-  <p><button class="relay" onclick="toggleRelay()">Toggle Relay</button></p>
+  <!-- Sterowanie LED -->
   <p>
+    <button class="led" onclick="toggleLed()">Toggle LED</button>
+  </p>
+  <!-- Sterowanie przekaźnikiem -->
+  <p>
+    <button class="relay" onclick="toggleRelay()">Toggle Relay</button>
+  </p>
+  <!-- Sterowanie dimmerem -->
+  <div class="slider-container">
     <label for="dimmerRange">Dimmer Brightness:</label>
     <input id="dimmerRange" type="range" min="0" max="100" value="0" onchange="setDimmer(this.value)">
-  </p>
+  </div>
+  <!-- Sekcja wyświetlania statusu -->
   <div class="status">
     <p>LED: <span id="ledStatus">OFF</span></p>
     <p>Relay: <span id="relayStatus">OFF</span></p>
@@ -27,15 +36,21 @@
   <script>
     // Funkcja do przełączania LED
     function toggleLed() {
-      fetch('/toggle_led').then(() => updateStatus());
+      fetch('/toggle_led')
+        .then(response => response.text())
+        .then(() => updateStatus());
     }
     // Funkcja do przełączania przekaźnika
     function toggleRelay() {
-      fetch('/toggle_relay').then(() => updateStatus());
+      fetch('/toggle_relay')
+        .then(response => response.text())
+        .then(() => updateStatus());
     }
     // Funkcja do ustawienia dimmera
     function setDimmer(value) {
-      fetch(`/set_dimmer?value=${value}`).then(() => updateStatus());
+      fetch(`/set_dimmer?value=${value}`)
+        .then(response => response.text())
+        .then(() => updateStatus());
     }
     // Funkcja do aktualizacji statusu
     function updateStatus() {

@@ -30,9 +30,9 @@
 
   // Piny dla diody LED i przekaźnika
   const int ledPin = D3;    // GPIO5 (D1 na NodeMCU)
-  const int relayPin = D5;  // GPIO4 (D2 na NodeMCU)
-  const int dimmerPin = D6;
-  const int zcPin = D8;     // GPIO2 (D na NodeMCU) - Zero-cross detection pin
+  const int relayPin = D6;  // GPIO4 (D2 na NodeMCU)
+  const int dimmerPin = D8;
+  const int zcPin = D7;     // GPIO2 (D na NodeMCU) - Zero-cross detection pin
   
   // Zmienne stanu diody LED i przekaźnika
   bool ledState = false;    // Stan diody LED
@@ -418,14 +418,17 @@ void setup() {
   
 
   // Endpoint do ustawienia jasności dimmera
- server.on("/set_dimmer", []() {
+  server.on("/set_dimmer", []() {
     if (server.hasArg("value")) {
       dimmerValue = server.arg("value").toInt();
-      dimmer.setPower(dimmerValue); // Ustaw nową jasność
-      server.send(200, "text/plain", "Dimmer set to " + String(dimmerValue) + "%");
-      Serial.println("Dimmer set to " + String(dimmerValue) + "%");
+      if (dimmerValue < 0) dimmerValue = 0;
+      if (dimmerValue > 100) dimmerValue = 100;
+
+      dimmer.setPower(dimmerValue);
+      Serial.printf("Dimmer ustawiony na: %d\n", dimmerValue);
+      server.send(200, "text/plain", "OK");
     } else {
-      server.send(400, "text/plain", "Missing 'value' parameter");
+      server.send(400, "text/plain", "Brak wartości 'value'");
     }
   });
 
