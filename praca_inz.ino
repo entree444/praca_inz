@@ -31,8 +31,8 @@
 const int ledPin = D3;    // GPIO5 (D1 na NodeMCU)
 const int relayPin = D6;  // GPIO4 (D2 na NodeMCU)
 
-#define ZERO_CROSS_PIN D1      // GPIO5
-#define DIMMER_PIN D2          // GPIO4
+#define ZERO_CROSS_PIN D7     
+#define DIMMER_PIN D8         
  
   // Zmienne stanu diody LED i przekaźnika
 bool ledState = false;    // Stan diody LED
