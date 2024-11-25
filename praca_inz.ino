@@ -23,25 +23,22 @@
 
 #include "rgb_led.h"
 #include "webinterface.h"
-#include <RBDdimmer.h>
 
 #define MIN(x,y) (x<y ? x : y)
 #define MAX(x,y) (x>y ? x : y)
 
   // Piny dla diody LED i przekaźnika
-  const int ledPin = D3;    // GPIO5 (D1 na NodeMCU)
-  const int relayPin = D6;  // GPIO4 (D2 na NodeMCU)
-  const int dimmerPin = D8;
-  const int zcPin = D7;     // GPIO2 (D na NodeMCU) - Zero-cross detection pin
-  
+const int ledPin = D3;    // GPIO5 (D1 na NodeMCU)
+const int relayPin = D6;  // GPIO4 (D2 na NodeMCU)
+
+#define ZERO_CROSS_PIN D1      // GPIO5
+#define DIMMER_PIN D2          // GPIO4
+ 
   // Zmienne stanu diody LED i przekaźnika
-  bool ledState = false;    // Stan diody LED
-  bool relayState = false;  // Stan przekaźnika
- int dimmerValue = 0;      // Poziom jasności Dimmer (0-100%)
-
-  // Obiekt dla AC Dimmer
-dimmerLamp dimmer(dimmerPin, zcPin); // Konstruktor z pinami: sterowanie, ZC
-
+bool ledState = false;    // Stan diody LED
+bool relayState = false;  // Stan przekaźnika
+volatile int brightness = 128; // Jasność dimmera (0-255)
+ 
 /*********************************************************************************/
 
 // Uncomment to send DMX data using the microcontroller's builtin UART.
@@ -174,6 +171,17 @@ void onDmxPacket(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *
 
 /*********************************************************************************/
 
+
+// Funkcja obsługująca przerwanie przy przejściu przez zero
+void IRAM_ATTR zeroCrossInterrupt() {
+  int delayTime = map(brightness, 0, 255, 0, 1000);
+  delayMicroseconds(delayTime);
+  digitalWrite(DIMMER_PIN, HIGH);
+  delayMicroseconds(10); // Krótki impuls
+  digitalWrite(DIMMER_PIN, LOW);
+}
+
+/******************************************************************** */
 void setup() {
 
   // Serial0 is for debugging purposes
@@ -390,14 +398,17 @@ void setup() {
 
   Serial.println("Setup done");
     /*********************************/
-    pinMode(ledPin, OUTPUT);
-    pinMode(relayPin, OUTPUT);
-  
-    digitalWrite(ledPin, LOW); // Wyłącz diodę na starcie
-    digitalWrite(relayPin, LOW); // Wyłącz przekaźnik na starcie
+  pinMode(ledPin, OUTPUT);
+  pinMode(relayPin, OUTPUT);
+  pinMode(ZERO_CROSS_PIN, INPUT_PULLUP);
+  pinMode(DIMMER_PIN, OUTPUT);
 
-/*    dimmer.begin(NORMAL_MODE, ON); // NORMAL_MODE (pełna faza), stan początkowy włączony
-    dimmer.setPower(0);   */
+  digitalWrite(ledPin, LOW);
+  digitalWrite(relayPin, LOW);
+  digitalWrite(DIMMER_PIN, LOW);
+
+attachInterrupt(digitalPinToInterrupt(ZERO_CROSS_PIN), zeroCrossInterrupt, FALLING);
+
 
 
     // Endpoint do sterowania diodą LED
@@ -415,30 +426,25 @@ void setup() {
       server.send(200, "text/plain", relayState ? "ON" : "OFF");
       Serial.println(relayState ? "Relay ON" : "Relay OFF");
     });
+
+    
+server.on("/set_brightness", []() {
+  if (server.hasArg("value")) {
+    brightness = server.arg("value").toInt();
+    server.send(200, "text/plain", "Brightness set to " + String(brightness));
+  } else {
+    server.send(400, "text/plain", "Bad Request");
+  }
+});
+
+server.on("/status", []() {
+  String status = "{\"led\":\"" + String(ledState ? "ON" : "OFF") +
+                  "\",\"relay\":\"" + String(relayState ? "ON" : "OFF") +
+                  "\",\"dimmer\":\"" + String(brightness) + "\"}";
+  server.send(200, "application/json", status);
+});
   
 
-  // Endpoint do ustawienia jasności dimmera
-  server.on("/set_dimmer", []() {
-    if (server.hasArg("value")) {
-      dimmerValue = server.arg("value").toInt();
-      if (dimmerValue < 0) dimmerValue = 0;
-      if (dimmerValue > 100) dimmerValue = 100;
-
-      dimmer.setPower(dimmerValue);
-      Serial.printf("Dimmer ustawiony na: %d\n", dimmerValue);
-      server.send(200, "text/plain", "OK");
-    } else {
-      server.send(400, "text/plain", "Brak wartości 'value'");
-    }
-  });
-
-  // Endpoint do pobierania aktualnego stanu urządzeń
-  server.on("/status", []() {
-    String status = "{\"led\":\"" + String(ledState ? "ON" : "OFF") +
-                    "\",\"relay\":\"" + String(relayState ? "ON" : "OFF")+ 
-                    "\",\"dimmer\":" + String(dimmerValue) + "}";
-    server.send(200, "application/json", status);
-  });
 
 
 } // setup
