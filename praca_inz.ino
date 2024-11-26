@@ -428,12 +428,13 @@ attachInterrupt(digitalPinToInterrupt(ZERO_CROSS_PIN), zeroCrossInterrupt, FALLI
     });
 
     
-server.on("/set_brightness", []() {
+  server.on("/set_brightness", []() {
   if (server.hasArg("value")) {
     brightness = server.arg("value").toInt();
     server.send(200, "text/plain", "Brightness set to " + String(brightness));
   } else {
     server.send(400, "text/plain", "Bad Request");
+       
   }
 });
 
@@ -443,8 +444,9 @@ server.on("/status", []() {
                   "\",\"dimmer\":\"" + String(brightness) + "\"}";
   server.send(200, "application/json", status);
 });
-  
 
+
+analogWrite(DIMMER_PIN, brightness); 
 
 
 } // setup
