@@ -3,14 +3,7 @@
    and sends it to a MAX485 module as an interface between wireless
    Art-Net and wired DMX512.
 
-   This firmware can either use the UART (aka Serial) interface to
-   the MAX485 module, or the I2S interface. Note that the wiring
-   depends on whether you use UART or I2S.
 
-   See https://robertoostenveld.nl/art-net-to-dmx512-with-esp8266/
-   and comments to that blog post.
-
-   See https://github.com/robertoostenveld/esp8266_artnet_dmx512
 */
 
 #include <Arduino.h>
