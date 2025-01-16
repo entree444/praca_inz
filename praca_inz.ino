@@ -1,11 +1,3 @@
-/*
-   This sketch receives Art-Net data of one DMX universes over WiFi
-   and sends it to a MAX485 module as an interface between wireless
-   Art-Net and wired DMX512.
-
-
-*/
-
 #include <Arduino.h>
 #include <ESP8266WiFi.h>         // https://github.com/esp8266/Arduino
 #include <ESP8266WebServer.h>
@@ -20,14 +12,14 @@
 #define MIN(x,y) (x<y ? x : y)
 #define MAX(x,y) (x>y ? x : y)
 
-  // Piny dla diody LED i przekaźnika
-const int ledPin = D3;    // GPIO5 (D1 na NodeMCU)
-const int relayPin = D6;  // GPIO4 (D2 na NodeMCU)
+// Piny dla diody LED i przekaźnika
+const int ledPin = D3;    
+const int relayPin = D6;  
 
 #define ZERO_CROSS_PIN D7     
 #define DIMMER_PIN D8         
  
-  // Zmienne stanu diody LED i przekaźnika
+// Zmienne stanu diody LED i przekaźnika
 bool ledState = false;    // Stan diody LED
 bool relayState = false;  // Stan przekaźnika
 volatile int brightness = 128; // Jasność dimmera (0-255)
