@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>ESP8266 Control Panel</title>
+  <title>PILOT</title>
   <style>
     body { font-family: Arial, sans-serif; text-align: center; margin: 50px; }
     button { font-size: 20px; padding: 10px 20px; margin: 10px; cursor: pointer; }
@@ -12,17 +12,17 @@
   </style>
 </head>
 <body>
-  <h1>ESP8266 Control Panel</h1>
-  <p><button class="led" onclick="toggleLed()">Toggle LED</button></p>
-  <p><button class="relay" onclick="toggleRelay()">Toggle Relay</button></p>
+  <h1>PILOT</h1>
+  <p><button class="led" onclick="toggleLed()">PRZEKAŹNIK 1</button></p>
+  <p><button class="relay" onclick="toggleRelay()">PRZEKAŹNIK 2</button></p>
   <p>
-    <label for="brightness">Dimmer Brightness:</label>
+    <label for="brightness">DIMMER:</label>
     <input type="range" id="brightness" min="0" max="255" step="1" onchange="setBrightness(this.value)">
   </p>
   <div class="status">
-    <p>LED: <span id="ledStatus">OFF</span></p>
-    <p>Relay: <span id="relayStatus">OFF</span></p>
-    <p>Dimmer Brightness: <span id="dimmerStatus">128</span></p>
+    <p>PRZEKAŹNIK 1: <span id="ledStatus">OFF</span></p>
+    <p>PRZEKAŹNIK 2: <span id="relayStatus">OFF</span></p>
+    <p>DIMMER: <span id="dimmerStatus">128</span></p>
   </div>
   <script>
     // Funkcja do przełączania LED
