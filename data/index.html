@@ -7,25 +7,39 @@
 </head>
 
 <body>
-    <a href="/hello.html">Hello</a>
-    <button onclick="location.href='/hello.html'">Go to Hello</button><br>
-
-    <a href="/monitor.html">Monitor</a>
-    <button onclick="location.href='/monitor.html'">Go to Monitor</button><br>
-
-    <a href="/settings.html">Change settings</a>
-    <button onclick="location.href='/settings.html'">Change settings</button><br>
-
-    <a href="/reconnect">Reconnect WiFi</a>
-    <button onclick="location.href='/reconnect'">Reconnect WiFi</button><br>
-
-    <a href="/defaults">Default settings</a>
-    <button onclick="location.href='/defaults'">Default settings</button><br>
-
-    <a href="/update.html">Update firmware</a>
-    <button onclick="location.href='/update.html'">Update firmware</button><br>
-
-    <a href="/restart">Restart hardware</a>
-    <button onclick="location.href='/restart'">Restart hardware</button><br>
+        <style>
+            .button-group {
+                margin-bottom: 1px;
+            }
+        </style>
+    
+        <div class="button-group">
+            <button onclick="location.href='/pilot.html'">PILOT</button>
+        </div>
+    
+        <div class="button-group">
+            <button onclick="location.href='/monitor.html'">MONITOR</button>
+        </div>
+    
+        <div class="button-group">
+            <button onclick="location.href='/settings.html'">Zmiana ustawień</button>
+        </div>
+    
+        <div class="button-group">
+            <button onclick="location.href='/reconnect'">Ponownę połączenie</button>
+        </div>
+    
+        <div class="button-group">
+            <button onclick="location.href='/defaults'">Ustawienia domyślne </button>
+        </div>
+    
+        <div class="button-group">
+            <button onclick="location.href='/update.html'">Aktualizacja firmware</button>
+        </div>
+    
+        <div class="button-group">
+            <button onclick="location.href='/restart'">Resetowanie ustawień</button>
+        </div>
 </body>
+
 </html>
