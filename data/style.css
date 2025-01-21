@@ -16,3 +16,12 @@ button{
 .q{
     float: right;width: 64px;text-align: right;
 }
+
+.q{
+    float: right;width: 64px;text-align: right;
+}
+
+label{
+    max-width: 50px;
+    white-space: nowrap;
+}
