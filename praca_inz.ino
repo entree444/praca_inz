@@ -12,53 +12,38 @@
 #define MIN(x,y) (x<y ? x : y)
 #define MAX(x,y) (x>y ? x : y)
 
-// Piny dla diody LED i przekaźnika
+// Piny dla przekaźnika_1 i przekaźnika_2
 const int ledPin = D3;    
 const int relayPin = D6;  
 
+// Piny dla dimera
 #define ZERO_CROSS_PIN D7     
 #define DIMMER_PIN D8         
  
-// Zmienne stanu diody LED i przekaźnika
-bool ledState = false;    // Stan diody LED
-bool relayState = false;  // Stan przekaźnika
+// Zmienne przekaźnika_1 i przekaźnika_2
+bool ledState = false;    // Stan przekaźnika_1
+bool relayState = false;  // Stan przekaźnik_2
 volatile int brightness = 128; // Jasność dimmera (0-255)
  
-/*********************************************************************************/
+ // Pin w WEMOS D1 do podłoczenia do 485 
+#define ENABLE_UART //D4
 
-// Uncomment to send DMX data using the microcontroller's builtin UART.
-// This is the original way this sketch used to work and expects the max485 level
-// shifter to be connected to the pin that corresponds to Serial1.
-// On a Wemos D1 this is pin D4 aka TX1.
-#define ENABLE_UART
 
-// Enable kind of unit test for new I2S code moving around a knowingly picky device
-// (china brand moving head with timing issues)
-//#define WITH_TEST_CODE
 
-// Comment in to enable standalone mode. This means that the setup function won't
-// block until the device was configured to connect to a Wifi network but will start
-// to receive Artnet data right away on the access point network that the WifiManager
-// created for this purpose. You can then simply ignore the configuration attempt and
-// use the device without a local Wifi network or choose to connect one later.
-// Consider setting also a password in standalone mode, otherwise someone else might
-// configure your device to connect to a random Wifi.
 //#define ENABLE_STANDALONE
-//#define STANDALONE_PASSWORD "wifisecret"
+//#define STANDALONE_PASSWORD "wifi_secret"
 
 // Enable OTA (over the air programming in the Arduino GUI, not via the web server)
 //#define ENABLE_ARDUINO_OTA
-//#define ARDUINO_OTA_PASSWORD "otasecret"
+//#define ARDUINO_OTA_PASSWORD "ota_secret"
 
-// Enable the web interface that allows to configure the ArtNet universe, the number
-// of channels, etcetera
+// włącznie interfejsu webowego do ustawienia kanału 
 #define ENABLE_WEBINTERFACE
 
-// Enable multicast DNS, which resolves hostnames to IP addresses within small networks
-// that do not include a local name server
+// włączenie multicast dns
 #define ENABLE_MDNS
 
-/*********************************************************************************/
+
 
 #ifdef ENABLE_UART
 #include "c_types.h"
@@ -72,8 +57,6 @@ volatile int brightness = 128; // Jasność dimmera (0-255)
 #define DMX_BREAK 92
 #define DMX_MAB 12
 #endif // ENABLE_UART
-
-/*********************************************************************************/
 
 const char* host = "ART-NET";
 const char* version = __DATE__ " / " __TIME__;
@@ -154,9 +137,7 @@ void onDmxPacket(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *
   }
 } // onDmxpacket
 
-/*********************************************************************************/
-
-
+//dimmer
 // Funkcja obsługująca przerwanie przy przejściu przez zero
 void IRAM_ATTR zeroCrossInterrupt() {
   int delayTime = map(brightness, 0, 255, 0, 1000);
@@ -166,7 +147,7 @@ void IRAM_ATTR zeroCrossInterrupt() {
   digitalWrite(DIMMER_PIN, LOW);
 }
 
-/******************************************************************** */
+
 void setup() {
 
   // Serial0 is for debugging purposes
@@ -273,6 +254,8 @@ void setup() {
   // this serves all URIs that can be resolved to a file on the SPIFFS filesystem
   server.onNotFound(handleNotFound);
 
+
+//?
   server.on("/", HTTP_GET, []() {
     tic_web = millis();
     handleRedirect("/index.html");
@@ -382,7 +365,8 @@ void setup() {
 
 
   Serial.println("Setup done");
-    /*********************************/
+  
+
   pinMode(ledPin, OUTPUT);
   pinMode(relayPin, OUTPUT);
   pinMode(ZERO_CROSS_PIN, INPUT_PULLUP);
@@ -396,17 +380,17 @@ attachInterrupt(digitalPinToInterrupt(ZERO_CROSS_PIN), zeroCrossInterrupt, FALLI
 
 
 
-    // Endpoint do sterowania diodą LED
+    // Endpoint do sterowania przekaźnikiem_1
     server.on("/toggle_led", []() {
-      ledState = !ledState; // Zmień stan diody
+      ledState = !ledState; // Zmień stan przekaźnika_1
       digitalWrite(ledPin, ledState ? HIGH : LOW);
       server.send(200, "text/plain", ledState ? "ON" : "OFF");
       Serial.println(ledState ? "LED ON" : "LED OFF");
     });
   
-    // Endpoint do sterowania przekaźnikiem
+    // Endpoint do sterowania przekaźnikiem_2
     server.on("/toggle_relay", []() {
-      relayState = !relayState; // Zmień stan przekaźnika
+      relayState = !relayState; // Zmień stan przekaźnika_2
       digitalWrite(relayPin, relayState ? HIGH : LOW);
       server.send(200, "text/plain", relayState ? "ON" : "OFF");
       Serial.println(relayState ? "Relay ON" : "Relay OFF");
@@ -434,9 +418,9 @@ server.on("/status", []() {
 analogWrite(DIMMER_PIN, brightness);  
 
 
-} // setup
+}
+ // setup
 
-/*********************************************************************************/
 
 void loop() {
   // handle wifiManager and arduinoOTA requests only when not receiving new DMX data
@@ -520,9 +504,10 @@ void loop() {
   testCode();
 #endif
 
-} // loop
+} 
+// loop
 
-/*********************************************************************************/
+
 
 #ifdef WITH_TEST_CODE
 void testCode() {
