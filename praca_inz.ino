@@ -154,18 +154,18 @@ void IRAM_ATTR zeroCrossInterrupt() {
 
 void setup() {
 
-  // Serial0 is for debugging purposes
+ // Serial0 służy do celów debugowania
   Serial.begin(115200);
   while (!Serial) {
     ;
   }
   Serial.println("Setup starting");
 
-  // set up three output pins for a RGB status LED
+// skonfiguruj trzy piny wyjściowe dla diody LED stanu RGB
   ledInit();
 
 #ifdef ENABLE_UART
-  // Serial1 output is for DMX signalling to the MAX485 module
+// skonfiguruj trzy piny wyjściowe dla diody LED stanu RGB
   Serial1.begin(250000, SERIAL_8N2);
 #endif
 
@@ -178,7 +178,7 @@ void setup() {
     global.uart_data[i] = 0;
 #endif
 
-  // The SPIFFS file system contains the html and javascript code for the web interface
+// System plików SPIFFS zawiera kod HTML i JavaScript dla interfejsu internetowego
   SPIFFS.begin();
 
   if (loadConfig()) {
@@ -255,7 +255,7 @@ void setup() {
 
 #ifdef ENABLE_WEBINTERFACE
 
-  // this serves all URIs that can be resolved to a file on the SPIFFS filesystem
+// obsługuje wszystkie identyfikatory URI, które można rozwiązać do pliku w systemie plików SPIFFS
   server.onNotFound(handleNotFound);
 
 
@@ -343,13 +343,13 @@ void setup() {
 
   server.on("/update", HTTP_POST, handleUpdate1, handleUpdate2);
 
-  // start the web server
+  // start serwera
   server.begin();
 
 #endif // ifdef ENABLE_WEBINTERFACE
 
 #ifdef ENABLE_MDNS
-  // announce the hostname and web server through zeroconf
+  // ogłoś nazwę hosta i serwer WWW przez zeroconf
   MDNS.begin(host);
   MDNS.addService("http", "tcp", 80);
 #endif
@@ -357,7 +357,7 @@ void setup() {
   artnet.begin();
   artnet.setArtDmxCallback(onDmxPacket);
 
-  // initialize all timers
+  // zainicjuj wszystkie timery
   tic_loop   = millis();
   tic_packet = millis();
   tic_fps    = millis();
@@ -427,7 +427,7 @@ analogWrite(DIMMER_PIN, brightness);
 
 
 void loop() {
-  // handle wifiManager and arduinoOTA requests only when not receiving new DMX data
+// obsługuj żądania wifiManager i arduinoOTA tylko wtedy, gdy nie otrzymujesz nowych danych DMX
   long now = millis();
   if (now - last_packet_received > 1000) {
     wifiManager.process();
@@ -435,7 +435,7 @@ void loop() {
     if (WiFi.status() == WL_CONNECTED && !arduinoOtaStarted) {
       Serial.println("Starting Arduino OTA (loop)");
       ArduinoOTA.begin();
-      arduinoOtaStarted = true; // remember that it started
+      arduinoOtaStarted = true; 
     }
     ArduinoOTA.handle();
 #endif
@@ -451,7 +451,7 @@ void loop() {
   }
 
   if ((millis() - tic_web) < 5000) {
-    // give feedback that the webinterface is active
+// przekaż informację zwrotną, że interfejs sieciowy jest aktywny
     ledBlue();
     delay(25);
   }
@@ -459,7 +459,7 @@ void loop() {
     ledGreen();
     artnet.read();
 
-    // this section gets executed at a maximum rate of around 40Hz
+    // ta sekcja jest wykonywana z maksymalną częstotliwością około 40 Hz
     if ((millis() - tic_loop) > config.delay) {
       long now = millis();
       tic_loop = now;
@@ -467,7 +467,7 @@ void loop() {
 
 #ifdef ENABLE_UART
 #ifdef USE_SERIAL_BREAK
-      // switch to another baud rate, see https://forum.arduino.cc/index.php?topic=382040.0
+      
       Serial1.flush();
       Serial1.begin(90000, SERIAL_8N2);
       while (Serial1.available()) Serial1.read();
