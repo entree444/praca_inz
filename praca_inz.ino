@@ -29,13 +29,12 @@ volatile int brightness = 128; // Jasność dimmera (0-255)
 #define ENABLE_UART //D4
 
 
-
 //#define ENABLE_STANDALONE
-//#define STANDALONE_PASSWORD "wifi_secret"
+//#define STANDALONE_PASSWORD "WIFI_secret"
 
-// Enable OTA (over the air programming in the Arduino GUI, not via the web server)
+// Włącz OTA (programowanie bezprzewodowe w Arduino GUI, nie przez serwer WWW)
 //#define ENABLE_ARDUINO_OTA
-//#define ARDUINO_OTA_PASSWORD "ota_secret"
+//#define ARDUINO_OTA_PASSWORD "OTA_WI_FI"
 
 // włącznie interfejsu webowego do ustawienia kanału 
 #define ENABLE_WEBINTERFACE
@@ -49,11 +48,13 @@ volatile int brightness = 128; // Jasność dimmera (0-255)
 #include "c_types.h"
 #include "eagle_soc.h"
 #include "uart_register.h"
-// there are two different implementations for the break, one using serial, the other using low-level timings; both should work
+
+// istnieją dwie różne implementacje dla przerwy, jedna wykorzystująca szereg, druga wykorzystująca czasy niskiego poziomu; obie powinny działać
 #define USE_SERIAL_BREAK
-/* UART for DMX output */
+
+// UART for DMX output 
 #define SEROUT_UART 1
-/* DMX minimum timings per E1.11 */
+// Minimalne czasy DMX zgodnie z E1.11 
 #define DMX_BREAK 92
 #define DMX_MAB 12
 #endif // ENABLE_UART
@@ -66,12 +67,13 @@ ESP8266WebServer server(80);
 ArtnetWifi artnet;
 WiFiManager wifiManager;
 
-// keep track of the timing of the function calls
+//śledź czas wywołań funkcji
 long tic_loop = 0, tic_fps = 0, tic_packet = 0, tic_web = 0;
 unsigned long packetCounter = 0, frameCounter = 0, last_packet_received = 0;
 float fps = 0;
 
-// Global buffer with one Artnet universe
+// Globalny bufor z jednym wszechświatem Artnet
+
 struct  {
   uint16_t universe;
   uint16_t length;
@@ -84,7 +86,8 @@ struct  {
 
 #ifdef ENABLE_ARDUINO_OTA
 #include <ArduinoOTA.h>
-// Keep track whether OTA was started
+
+// Śledź, czy OTA zostało uruchomione
 bool arduinoOtaStarted = false;
 unsigned int last_ota_progress = 0;
 #endif
@@ -94,9 +97,9 @@ long tic_uart = 0;
 unsigned long uartCounter;
 #endif
 
-/*********************************************************************************/
 
-// This will be called for each UDP packet that is received
+
+// Ta funkcja będzie wywoływana dla każdego otrzymanego pakietu UDP
 void onDmxPacket(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t * data) {
 
   unsigned long now = millis();
@@ -105,16 +108,17 @@ void onDmxPacket(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *
   }
   last_packet_received = now;
 
-  // print some feedback once per second
+  // pokazuj informacje zwrotne raz na sekundę
   if ((millis() - tic_fps) > 1000 && frameCounter > 100) {
     Serial.print("packetCounter = ");
     Serial.print(packetCounter++);
-    // don't estimate the FPS too frequently
+
+   // nie sprawdzaj FPS zbyt często
     fps = 1000 * frameCounter / (millis() - tic_fps);
     tic_fps = last_packet_received;
     frameCounter = 0;
     Serial.print(", FPS = ");             Serial.print(fps);
-    // print out also some diagnostic info
+    // pokaż także pewne informacje diagnostyczne
     Serial.print(", length = ");          Serial.print(length);
     Serial.print(", sequence = ");        Serial.print(sequence);
     Serial.print(", universe = ");        Serial.print(universe);
@@ -123,7 +127,7 @@ void onDmxPacket(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *
   }
 
   if (universe == config.universe) {
-    // copy the data from the UDP packet
+    // kopiuj dane z pakietu UDP
     global.universe = universe;
     global.sequence = sequence;
 
